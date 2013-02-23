@@ -1,5 +1,3 @@
-//g++ main.cpp -O3 -ljpeg -lpng
-
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -47,7 +45,7 @@ void ReadJpeg2Buff(ColorData* &JpegPixOrigData)
     
     FILE *infile;
     unsigned char *buffer;
-    int x = 0, y = 0;//, PicHighti, PicWidth;
+    int x = 0, y = 0;//, PicHeight, PicWidth;
     
     int i, j;
     
@@ -126,6 +124,17 @@ void WritePng(ColorData* PicData)
     png_write_end(png_ptr, NULL);
 }
 
+/*
+double distanceSquare(ColorData &c1, ColorData &c2)
+{
+    return ( ((double)c1.Color[0]-c2.Color[0])*((double)c1.Color[0]-c2.Color[0]) + ((double)c1.Color[1]-c2.Color[1])*((double)c1.Color[1]-c2.Color[1]) + ((double)c1.Color[2]-c2.Color[2])*((double)c1.Color[2]-c2.Color[2]) );
+}
+*/
+double distanceSquare(ColorData &c1, ColorData &c2, double u=1)    //c1: sum
+{
+    return ( ((double)c1.Color[0]/u-c2.Color[0])*((double)c1.Color[0]/u-c2.Color[0]) + ((double)c1.Color[1]/u-c2.Color[1])*((double)c1.Color[1]/u-c2.Color[1]) + ((double)c1.Color[2]/u-c2.Color[2])*((double)c1.Color[2]/u-c2.Color[2]) );
+}
+
 
 void work(ColorData* PicData)
 {
@@ -149,8 +158,8 @@ void work(ColorData* PicData)
         for(j = 0; j < PicInfo.Width; j++)
         {
             g = i * PicInfo.Width + j;
-            u = count * count;
-            if(abs(BgInitColor.Color[0]/u*BgInitColor.Color[0] + BgInitColor.Color[1]/u*BgInitColor.Color[1] + BgInitColor.Color[2]/u*BgInitColor.Color[2] - (PicData[g].Color[0]*PicData[g].Color[0] + PicData[g].Color[1]*PicData[g].Color[1] + PicData[g].Color[2]*PicData[g].Color[2])) > 2500 )
+//            u = count * count;
+            if(abs(distanceSquare(BgInitColor, PicData[g], count)) > (Delta+10)*(Delta+10) )
             {
                 continue;
             }
@@ -172,12 +181,18 @@ void work(ColorData* PicData)
         {
             u = count * count;
             g = i * PicInfo.Width + j;
-            if(abs(BgInitColor.Color[0]*BgInitColor.Color[0] + BgInitColor.Color[1]*BgInitColor.Color[1] + BgInitColor.Color[2]*BgInitColor.Color[2] - (PicData[g].Color[0]*PicData[g].Color[0] + PicData[g].Color[1]*PicData[g].Color[1] + PicData[g].Color[2]*PicData[g].Color[2])) < Delta*Delta )
+            if(abs(distanceSquare(BgInitColor, PicData[g])) < Delta*Delta )
             {
-	        PicData[g].Color[3] = 0;
+                PicData[g].Color[3] = 0;
+                PicData[g].Color[0] = 0;
+                PicData[g].Color[1] = 0;
+                PicData[g].Color[2] = 0;  
                 continue;
             }
-            
+/*            PicData[g].Color[0] = 0;
+            PicData[g].Color[1] = 0;
+            PicData[g].Color[2] = 0;*/
+            PicData[g].Color[3] = 255;
         }
     }
 }
@@ -206,7 +221,7 @@ int main()
     cin >> Delta;
     ColorData *jpd;
     ReadJpeg2Buff(jpd);
-    OutputJpegRawData(jpd);
+//    OutputJpegRawData(jpd);
     
     work(jpd);
     WritePng(jpd);
